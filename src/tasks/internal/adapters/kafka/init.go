@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	topicAssign = "assign"
-	topicUsers  = "users"
+	topicAssign           = "assign"
+	topicUsers            = "users"
+	topicUserRolesChanged = "user-roles-changed"
 )
 
 type (
@@ -25,9 +26,10 @@ type (
 	}
 
 	Adapter struct {
-		wAssign *kafka.Writer
-		rAssign *kafka.Reader
-		rUsers  *kafka.Reader
+		wAssign           *kafka.Writer
+		rAssign           *kafka.Reader
+		rUsers            *kafka.Reader
+		rUsersRoleChanged *kafka.Reader
 
 		tasks *tasks.Service
 		log   logger.Logger
@@ -68,6 +70,12 @@ func New(
 		Brokers: []string{cfg.Address},
 		GroupID: "",
 		Topic:   topicUsers,
+		Dialer:  dialer,
+	})
+	a.rUsersRoleChanged = kafka.NewReader(kafka.ReaderConfig{
+		Brokers: []string{cfg.Address},
+		GroupID: "",
+		Topic:   topicUserRolesChanged,
 		Dialer:  dialer,
 	})
 
@@ -119,4 +127,6 @@ func startRead(a *Adapter) {
 	ctx, cancel := context.WithCancel(context.Background())
 	a.cancels = append(a.cancels, cancel)
 	go a.ProduceAssign(ctx)
+	go a.readRolesChanged(ctx)
+	go a.ReadUserCUD(ctx)
 }

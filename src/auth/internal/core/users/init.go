@@ -31,6 +31,6 @@ func (us *UserService) GetUsers(ctx context.Context, offset, limit int) ([]*mode
 	return us.userStorage.List(ctx)
 }
 
-func (us *UserService) Delete(ctx context.Context, id int) error {
+func (us *UserService) Delete(ctx context.Context, id string) error {
 	return us.userStorage.Delete(ctx, id)
 }

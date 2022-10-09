@@ -3,6 +3,7 @@ package postgre
 import (
 	"context"
 	"errors"
+	"github.com/popoffvg/async-arch/common/pkg/events"
 
 	"github.com/popoffvg/async-arch/auth/ent"
 	"github.com/popoffvg/async-arch/auth/ent/user"
@@ -29,7 +30,7 @@ func (a *Adapter) CreateOrUpdate(ctx context.Context, m models.User) (u models.U
 		eUser    *ent.User
 		isCreate bool
 	)
-	if m.ID == 0 {
+	if m.ID == "" {
 		isCreate = true
 	}
 
@@ -39,19 +40,60 @@ func (a *Adapter) CreateOrUpdate(ctx context.Context, m models.User) (u models.U
 			SetPassword(m.Password).
 			SetScopes(m.Scopes).
 			Save(ctx)
+
+		a.onCreate(nil, eUser)
 	} else {
 		t := ent.User(m)
 		eUser, err = a.users.UpdateOne(&t).Save(ctx)
+		a.onUpdate(nil, eUser)
 	}
 
 	if err != nil {
 		return u, err
 	}
-	return models.User(*eUser), nil
+	return *eUser, nil
 }
 
-func (a *Adapter) Delete(ctx context.Context, id int) error {
-	return a.users.DeleteOneID(id).Exec(ctx)
+func (a *Adapter) onCreate(ctx context.Context, user *ent.User) {
+	err := a.mb.ProduceCUDEvent(ctx, events.UserCUD{
+		EventType: events.CUDTypeCreate,
+		ID:        user.ID,
+		Login:     user.Login,
+	})
+	if err != nil {
+		a.l.Errorf("produce CREATE event failed: %s for id %s", err.Error(), user.ID)
+	}
+}
+
+func (a *Adapter) onUpdate(ctx context.Context, user *ent.User) {
+	err := a.mb.ProduceCUDEvent(ctx, events.UserCUD{
+		EventType: events.CUDTypeCreate,
+		ID:        user.ID,
+		Login:     user.Login,
+	})
+	if err != nil {
+		a.l.Errorf("produce UPDATE event failed: %s for id %s", err.Error(), user.ID)
+	}
+}
+
+func (a *Adapter) onDelete(ctx context.Context, id string) {
+	err := a.mb.ProduceCUDEvent(ctx, events.UserCUD{
+		EventType: events.CUDTypeDelete,
+		ID:        id,
+	})
+	if err != nil {
+		a.l.Errorf("produce DELETE event failed: %s for id %s", err.Error(), id)
+	}
+}
+
+func (a *Adapter) Delete(ctx context.Context, id string) error {
+	err := a.users.DeleteOneID(id).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	a.onDelete(nil, id)
+	return nil
 }
 
 func (a *Adapter) List(ctx context.Context) ([]*models.User, error) {

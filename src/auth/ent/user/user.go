@@ -46,4 +46,8 @@ var (
 	DefaultScopes schema.Scope
 	// ScopesValidator is a validator for the "scopes" field. It is called by the builders before save.
 	ScopesValidator func(string) error
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID string
+	// IDValidator is a validator for the "id" field. It is called by the builders before save.
+	IDValidator func(string) error
 )

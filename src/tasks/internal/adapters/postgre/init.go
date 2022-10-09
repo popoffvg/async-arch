@@ -28,6 +28,7 @@ func New(cfg *Config) (*ent.Client, error) {
 
 	drv := entsql.OpenDB(dialect.Postgres, db)
 	cEnt := ent.NewClient(ent.Driver(drv))
+
 	if err := cEnt.Schema.Create(context.Background()); err != nil {
 		return nil, fmt.Errorf("migration failed: %w", err)
 	}

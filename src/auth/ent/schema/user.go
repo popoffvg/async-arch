@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"strings"
 
 	"entgo.io/ent"
@@ -30,6 +31,9 @@ type User struct {
 // Fields of the User.
 func (User) Fields() []ent.Field {
 	return []ent.Field{
+		field.String("id").
+			NotEmpty().
+			Default(uuid.New().String()),
 		field.String("login").
 			NotEmpty().
 			Unique(),

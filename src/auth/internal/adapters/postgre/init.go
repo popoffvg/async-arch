@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/popoffvg/async-arch/auth/internal/ports"
+	"github.com/popoffvg/async-arch/common/pkg/logger"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -21,10 +23,12 @@ type (
 
 	Adapter struct {
 		users ent.UserClient
+		mb    ports.EventRegistrator
+		l     logger.Logger ``
 	}
 )
 
-func New(cfg *Config) (*Adapter, error) {
+func New(cfg *Config, mb ports.EventRegistrator, log logger.Logger) (*Adapter, error) {
 	db, err := sql.Open("pgx", cfg.URI)
 	if err != nil {
 		return nil, fmt.Errorf("db create failed: %w", err)
@@ -39,6 +43,8 @@ func New(cfg *Config) (*Adapter, error) {
 
 	return &Adapter{
 		users: *cEnt.User,
+		mb:    mb,
+		l:     log,
 	}, nil
 }
 

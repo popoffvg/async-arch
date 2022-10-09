@@ -1,0 +1,8 @@
+package: gen
+generate:
+  gin-server: true
+  models: true
+  embedded-spec: true
+output: internal/adapters/http/gen/server.gen.go
+output-options:
+  skip-prune: true

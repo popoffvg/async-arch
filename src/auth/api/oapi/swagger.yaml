@@ -1,0 +1,96 @@
+
+openapi: '3.0.2'
+info:
+  title: Auth
+  version: '0.1'
+servers:
+  - url: https://localhost/auth/v1
+paths:
+  /login:
+    post:
+      security:
+        - BasicAuth: []
+      
+      responses:
+        '200':
+          description: autentification
+          headers:
+            Authentication:
+              schema:
+                type: string
+              description: auth token
+        '403':
+          description: forbidden
+  /verify:
+    post:
+      security:
+      - apiKeyAuth: []
+      responses:
+        '200':
+          description: permission granted
+  /users:
+    post:
+      security:
+        - BearerAuth: []
+      
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/user'
+
+      responses:
+        '200':
+          description: Create user
+        
+    get:
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Return users list
+          content:
+            requestBody:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/user'
+                  
+        
+    patch:
+      responses:
+        '200':
+          description: Update user
+
+components:
+  schemas:
+    user:
+      type: object
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+          format: password
+        scopes:
+          type: array
+          items:
+            type: string
+            enum:
+              - admin
+              - user
+              - superuser
+      required:
+        - login
+        - password
+        - scopes
+
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

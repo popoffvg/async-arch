@@ -24,7 +24,7 @@ type (
 	Adapter struct {
 		users ent.UserClient
 		mb    ports.EventRegistrator
-		l     logger.Logger ``
+		l     logger.Logger
 	}
 )
 

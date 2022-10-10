@@ -41,7 +41,7 @@ services:
       image: confluentinc/cp-kafka:7.0.1
       restart: always
       ports:
-        - "9093:9092"
+        - "9093:9093"
       depends_on:
         - zookeeper
       environment:

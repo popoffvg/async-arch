@@ -49,15 +49,17 @@ func New(
 	}
 
 	a.wUsersRoleChanged = &kafka.Writer{
-		Addr:     kafka.TCP(cfg.Address),
-		Topic:    topicUserRolesChanged,
-		Balancer: &kafka.LeastBytes{},
+		Addr:                   kafka.TCP(cfg.Address),
+		Topic:                  topicUserRolesChanged,
+		Balancer:               &kafka.LeastBytes{},
+		AllowAutoTopicCreation: true,
 	}
 
 	a.wUsers = &kafka.Writer{
-		Addr:     kafka.TCP(cfg.Address),
-		Topic:    topicUsers,
-		Balancer: &kafka.LeastBytes{},
+		Addr:                   kafka.TCP(cfg.Address),
+		Topic:                  topicUsers,
+		Balancer:               &kafka.LeastBytes{},
+		AllowAutoTopicCreation: true,
 	}
 
 	return a, nil

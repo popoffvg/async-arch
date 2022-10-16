@@ -1,6 +1,7 @@
 go 1.18
 
 use (
+	./src/accounting
 	./src/auth
 	./src/common
 	./src/tasks

@@ -10,6 +10,7 @@ import (
 const roleUser = "USER"
 
 func (a *Adapter) ReadUserCUD(ctx context.Context) {
+	a.log.Info("Start read USER topic")
 	for {
 		select {
 		case <-ctx.Done():
@@ -45,6 +46,7 @@ func (a *Adapter) ReadUserCUD(ctx context.Context) {
 }
 
 func (a *Adapter) readRolesChanged(ctx context.Context) {
+	a.log.Info("Start read ROLES topic")
 	for {
 		select {
 		case <-ctx.Done():

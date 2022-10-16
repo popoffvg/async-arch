@@ -2,20 +2,24 @@ package main
 
 import (
 	"context"
+	"github.com/popoffvg/async-arch/accounting/internal/adapters/kafka"
+	"github.com/popoffvg/async-arch/accounting/internal/adapters/postgre"
+	"github.com/popoffvg/async-arch/common/pkg/logger"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/popoffvg/async-arch/pkg/logger"
-	"github.com/popoffvg/async-arch/pkg/probes"
+	_ "github.com/popoffvg/async-arch/accounting/internal/ent/runtime"
 	"go.uber.org/fx"
 )
+
 func main() {
 	app := fx.New(
-		probes.Module,
 		logger.Module,
+		kafka.Module,
+		postgre.Module,
 	)
 
 	startCtx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -26,7 +30,7 @@ func main() {
 
 	<-startCtx.Done()
 
-	stopCtx, cancelStop := context.WithTimeout(context.Background(), 5 * time.Second)
+	stopCtx, cancelStop := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelStop()
 
 	err := app.Stop(stopCtx)

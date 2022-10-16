@@ -1,6 +1,6 @@
 package models
 
-import "github.com/popoffvg/async-arch/auth/ent"
+import "github.com/popoffvg/async-arch/auth/internal/ent"
 
 type User = ent.User
 

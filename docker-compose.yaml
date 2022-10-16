@@ -9,7 +9,6 @@ services:
     ports:
       - '80:80'
 
-
   auth:
     build:
       context: src/auth
@@ -28,4 +27,29 @@ services:
       image: postgres
       environment:
         POSTGRES_PASSWORD: password
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    restart: always
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+      image: confluentinc/cp-kafka:7.0.1
+      restart: always
+      ports:
+        - "9093:9093"
+      depends_on:
+        - zookeeper
+      environment:
+        KAFKA_BROKER_ID: 1
+        KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+        KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,OUTSIDE://0.0.0.0:9093
+        KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,OUTSIDE://localhost:9093
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,OUTSIDE:PLAINTEXT
+        KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 

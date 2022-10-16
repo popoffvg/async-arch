@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/popoffvg/async-arch/tasks/internal/adapters/http"
+	"github.com/popoffvg/async-arch/tasks/internal/adapters/kafka"
 	"github.com/popoffvg/async-arch/tasks/internal/adapters/postgre"
 	"github.com/popoffvg/async-arch/tasks/internal/core/tasks"
 	"log"
@@ -23,6 +24,7 @@ func main() {
 		postgre.Module,
 		http.Module,
 		tasks.Module,
+		kafka.Module,
 	)
 
 	startCtx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

@@ -9,6 +9,6 @@ import (
 type UserStorage interface {
 	GetUser(ctx context.Context, login string) (models.User, error)
 	CreateOrUpdate(ctx context.Context, u models.User) (models.User, error)
-	Delete(ctx context.Context, id int) error
+	Delete(ctx context.Context, id string) error
 	List(ctx context.Context) ([]*models.User, error)
 }

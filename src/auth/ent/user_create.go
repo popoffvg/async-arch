@@ -46,6 +46,20 @@ func (uc *UserCreate) SetNillableScopes(s *schema.Scope) *UserCreate {
 	return uc
 }
 
+// SetID sets the "id" field.
+func (uc *UserCreate) SetID(s string) *UserCreate {
+	uc.mutation.SetID(s)
+	return uc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (uc *UserCreate) SetNillableID(s *string) *UserCreate {
+	if s != nil {
+		uc.SetID(*s)
+	}
+	return uc
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uc *UserCreate) Mutation() *UserMutation {
 	return uc.mutation
@@ -127,6 +141,10 @@ func (uc *UserCreate) defaults() {
 		v := user.DefaultScopes
 		uc.mutation.SetScopes(v)
 	}
+	if _, ok := uc.mutation.ID(); !ok {
+		v := user.DefaultID
+		uc.mutation.SetID(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -155,6 +173,11 @@ func (uc *UserCreate) check() error {
 			return &ValidationError{Name: "scopes", err: fmt.Errorf(`ent: validator failed for field "User.scopes": %w`, err)}
 		}
 	}
+	if v, ok := uc.mutation.ID(); ok {
+		if err := user.IDValidator(v); err != nil {
+			return &ValidationError{Name: "id", err: fmt.Errorf(`ent: validator failed for field "User.id": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -166,8 +189,13 @@ func (uc *UserCreate) sqlSave(ctx context.Context) (*User, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(string); ok {
+			_node.ID = id
+		} else {
+			return nil, fmt.Errorf("unexpected User.ID type: %T", _spec.ID.Value)
+		}
+	}
 	return _node, nil
 }
 
@@ -177,11 +205,15 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec = &sqlgraph.CreateSpec{
 			Table: user.Table,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeString,
 				Column: user.FieldID,
 			},
 		}
 	)
+	if id, ok := uc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = id
+	}
 	if value, ok := uc.mutation.Login(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -250,10 +282,6 @@ func (ucb *UserCreateBulk) Save(ctx context.Context) ([]*User, error) {
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/popoffvg/async-arch/auth/internal/adapters/kafka"
 	"log"
 	"os"
 	"os/signal"
@@ -25,6 +26,7 @@ func main() {
 		auth.Module,
 		users.Module,
 		postgre.Module,
+		kafka.Module,
 	)
 
 	startCtx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

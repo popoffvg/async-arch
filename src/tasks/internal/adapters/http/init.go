@@ -51,10 +51,11 @@ func New(client *ent.Client, cfg *Config, log logger.Logger, assigner ports.Assi
 	g := gin.Default()
 	g.Use(ginzap.Ginzap(log.Desugar().WithOptions(zap.AddCallerSkip(1)), time.RFC3339, true))
 	g.Use(ginzap.RecoveryWithZap(log.Desugar().WithOptions(zap.AddCallerSkip(1)), true))
-	g.POST("/tasks/assign", func(c *gin.Context) {
-		c.Set(string(isRequestProcessed), true)
-		c.String(http.StatusOK, "test")
-	})
+
+	assignHandler := &assignHandler{
+		assigner: assigner,
+	}
+	g.POST("/tasks/assign", assignHandler.Assign)
 	g.Any("/tasks", func(c *gin.Context) {
 		handler.ServeHTTP(c.Writer, c.Request)
 	})

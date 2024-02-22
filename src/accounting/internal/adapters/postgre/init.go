@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/popoffvg/async-arch/tasks/ent"
+	"github.com/popoffvg/async-arch/accounting/internal/ent"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -15,7 +15,7 @@ import (
 
 type (
 	Config struct {
-		URI      string `env:"PG_URI" envDefault:"postgresql://postgre:password@0.0.0.0:5432/postgre?sslmode=disable"`
+		URI      string `env:"PG_URI" envDefault:"postgresql://postgres:password@0.0.0.0:5432/accounting?sslmode=disable"`
 		Password string `env:"PG_PASSWORD" envDefault:"password"`
 	}
 )

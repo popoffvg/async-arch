@@ -10,7 +10,7 @@ import (
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/caarlos0/env"
-	"github.com/popoffvg/async-arch/auth/ent"
+	"github.com/popoffvg/async-arch/auth/internal/ent"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 )

@@ -13,6 +13,7 @@ import (
 	"github.com/popoffvg/async-arch/auth/internal/adapters/postgre"
 	"github.com/popoffvg/async-arch/auth/internal/core/auth"
 	"github.com/popoffvg/async-arch/auth/internal/core/users"
+	_ "github.com/popoffvg/async-arch/auth/internal/ent/runtime"
 	"github.com/popoffvg/async-arch/common/pkg/logger"
 	"github.com/popoffvg/async-arch/common/pkg/probes"
 	"go.uber.org/fx"

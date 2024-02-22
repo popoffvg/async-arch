@@ -2,40 +2,38 @@ package kafka
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/avast/retry-go"
 	"github.com/caarlos0/env"
 	"github.com/google/uuid"
-	"github.com/ogen-go/ogen/json"
+	"github.com/popoffvg/async-arch/accounting/internal/ent"
 	"github.com/popoffvg/async-arch/common/pkg/logger"
-	"github.com/popoffvg/async-arch/tasks/ent"
-	"github.com/popoffvg/async-arch/tasks/internal/core/tasks"
 	"github.com/segmentio/kafka-go"
 	"time"
 )
 
 const (
-	topicAssign           = "assign"
-	topicUsers            = "users"
-	topicUserRolesChanged = "user-roles-changed"
+	topicAssign = "assign"
+	topicUsers  = "users"
+	topicTasks  = "tasks"
 
-	groupID = "tasks"
+	groupID = "accounting"
 )
 
 type (
 	Config struct {
-		Address string `env:"KAFKA_ADDRESS" envDefault:"localhost:9092"`
+		Address string `env:"KAFKA_ADDRESS" envDefault:"localhost:9093"`
 	}
 
 	Adapter struct {
-		wAssign           *kafka.Writer
-		rAssign           *kafka.Reader
-		rUsers            *kafka.Reader
-		rUsersRoleChanged *kafka.Reader
+		orm *ent.Client
 
-		tasks *tasks.Service
-		log   logger.Logger
-		orm   *ent.Client
+		rTasks  *kafka.Reader
+		rAssign *kafka.Reader
+		rUsers  *kafka.Reader
+
+		log logger.Logger
 
 		cancels []context.CancelFunc
 	}
@@ -43,24 +41,24 @@ type (
 
 func New(
 	cfg *Config,
-	tasks *tasks.Service,
 	log logger.Logger,
 	client *ent.Client,
-) (*Adapter, error) {
+) *Adapter {
 	a := new(Adapter)
-	a.tasks = tasks
-	a.log = log.Named("kafka-adapter")
+	a.log = log
 	a.orm = client
-	a.wAssign = &kafka.Writer{
-		Addr:     kafka.TCP(cfg.Address),
-		Topic:    topicAssign,
-		Balancer: &kafka.LeastBytes{},
-	}
 
 	dialer := &kafka.Dialer{
 		Timeout:   10 * time.Second,
 		DualStack: true,
 	}
+
+	a.rUsers = kafka.NewReader(kafka.ReaderConfig{
+		Brokers: []string{cfg.Address},
+		GroupID: groupID,
+		Topic:   topicUsers,
+		Dialer:  dialer,
+	})
 
 	a.rAssign = kafka.NewReader(kafka.ReaderConfig{
 		Brokers: []string{cfg.Address},
@@ -68,20 +66,15 @@ func New(
 		Topic:   topicAssign,
 		Dialer:  dialer,
 	})
-	a.rUsers = kafka.NewReader(kafka.ReaderConfig{
+
+	a.rTasks = kafka.NewReader(kafka.ReaderConfig{
 		Brokers: []string{cfg.Address},
 		GroupID: groupID,
-		Topic:   topicUsers,
-		Dialer:  dialer,
-	})
-	a.rUsersRoleChanged = kafka.NewReader(kafka.ReaderConfig{
-		Brokers: []string{cfg.Address},
-		GroupID: groupID,
-		Topic:   topicUserRolesChanged,
+		Topic:   topicTasks,
 		Dialer:  dialer,
 	})
 
-	return a, nil
+	return a
 }
 
 func NewConfig() (*Config, error) {
@@ -111,24 +104,34 @@ func writeMessage(ctx context.Context, w *kafka.Writer, msg any) (err error) {
 	)
 }
 
-func readMessage[T any](ctx context.Context, r *kafka.Reader) (*T, error) {
+func readMessage[T any](ctx context.Context, r *kafka.Reader) (context.Context, *T, error) {
 	msg, err := r.ReadMessage(ctx) // TODO: read with immidetly commit for simplest solution
 	if err != nil {
-		return nil, err
+		return ctx, nil, err
 	}
 
 	var payload T
 	if err := json.Unmarshal(msg.Value, &payload); err != nil {
-		return nil, err
+		return ctx, nil, err
 	}
 
-	return &payload, nil
+	ctx = context.WithValue(ctx, EventIDKey, msg.Key)
+	return ctx, &payload, nil
 }
 
 func startRead(a *Adapter) {
 	ctx, cancel := context.WithCancel(context.Background())
 	a.cancels = append(a.cancels, cancel)
-	go a.ProduceAssign(ctx)
-	go a.readRolesChanged(ctx)
 	go a.ReadUserCUD(ctx)
+	a.cancels = append(a.cancels, func() {
+		a.rTasks.Close()
+	})
+	go a.ReadTaskCUD(ctx)
+	a.cancels = append(a.cancels, func() {
+		a.rAssign.Close()
+	})
+	go a.ReadTaskAssign(ctx)
+	a.cancels = append(a.cancels, func() {
+		a.rUsers.Close()
+	})
 }

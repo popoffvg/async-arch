@@ -1,14 +1,11 @@
 package handlers
 
 import (
-	"net/http"
-	"strings"
-
 	"github.com/gin-gonic/gin"
-	"github.com/popoffvg/async-arch/auth/ent/schema"
 	"github.com/popoffvg/async-arch/auth/internal/adapters/http/gen"
 	"github.com/popoffvg/async-arch/auth/internal/core/models"
 	"github.com/popoffvg/async-arch/auth/internal/ports"
+	"net/http"
 )
 
 type Users struct {
@@ -64,10 +61,7 @@ func (u *Users) PatchUsers(c *gin.Context) {
 
 	m.Login = p.Login
 	m.Password = []byte(p.Password)
-	for _, v := range p.Scopes {
-		m.Scopes = m.Scopes.And(schema.Scope(strings.ToUpper(string(v))))
-	}
-
+	m.Scopes = "USER"
 	m, err = u.Usecases.SaveOrUpdate(c, m)
 	if err != nil {
 		c.Error(err)
@@ -86,6 +80,6 @@ func convertToProjection(m models.User) *User {
 	return &User{
 		ID:     m.ID,
 		Login:  m.Login,
-		Scopes: m.Scopes.ToArray(),
+		Scopes: []string{m.Scopes.String()},
 	}
 }
